@@ -1,0 +1,113 @@
+---
+title: "Two-way ANOVA template script"
+author: "your name"
+date: "the date"
+execute:
+  message: false
+  warning: false
+---
+
+This exercise sheet is heavily indebted to Michael Crawley's *Statistics: An introduction using R*, 2nd Ed, Wiley. Published in 2015 this emphasises statistics over R (in fact, much of the R he presents is written prior to the advent of the `tidyverse` dialect which we use here, and so may seem terse if that is what you are used to). It is very useful and is at a higher level than Beckerman, Childs and Petchey's *Getting Started in R: An introduction for biologists*, 2nd Ed. OUP published in 2017. Their book also includes a simpler version of the example explored here.
+
+## Instructions
+
+You should have the following files (your lecturer will tell you where to find them - probably Moodle)
+
+* In the Project/scripts folder:
+
+  * `ANOVA_two_way_template.Rmd` (this script. Work through it and fill in the code chunks as you go)
+  
+* In the Project/data folder
+
+  * `growth.csv`
+
+You will need to refer to:
+  * `ANOVA_two_way_with_model_simplification.html` chapter in [r4nqy](mbh038.github.io/r4nqy/)
+
+## Open your Project
+
+You should be working within a folder that you have designated as what RStudio calls a 'Project'. If you are, the name of your Project will appear at the top right of the RStudio window. Inside your Project folder you should have a `scripts` folder for scripts like this worksheet and the template file, and a `data` folder for all the data files, including the one used here, `growth.csv`. You will also see, at the top level of the Project, the `.RProj` file. You can see all this in the Files pane, bottom-right.
+
+## What to do
+
+* Open the guide [r4nqy](mbh038.github.io/r4nqy/) in a browser and go to the chapter on: ANOVA_two_way_with_model_simplification.html.  All the code you need is in there. 
+
+* Go through this template worksheet, read any instructions and fill in missing code in the code chunks as you go. Make sure any code is placed *inside* the chunk. It is a good idea to try out each line of code as you write it by typing either Ctrl-Enter (Windows) or Cmd-Enter (Mac). Alternatively, when you have completed the code for a chunk, run the whole chunk by clicking on the little green arrow in the top-right of the chunk.
+
+* Answer any questions that you come across.
+
+### Load packages
+
+```{r load packages, message = FALSE, warning = FALSE}
+#Enter code to load the packages tidyverse, here, cowplot and ggfortify. If need be, install them first.
+
+```
+
+### Read in the data
+
+The `growth.csv` data file needs to be in the `data` folder within the Project folder.
+
+In this chunk, already filled in, we read the `growth.csv` data into an R object to which we give the name `weights`.
+
+```{r}
+filepath <- here("data", "growth.csv")
+weights <- read_csv(filepath) # this function is from the readr package, part of tidyverse
+glimpse(weights)
+```
+* How many  columns and how many rows does `weights` have?
+* What type of data is in each column?
+
+
+
+### Make R recognise the categorical variables as factors, and order the levels.
+
+
+In the following chunk, use `factor()` to designate both the `supplement` and `diet` columns of the data set as factors, and specify the level order of each, with `control` coming first for `supplement` and `barley` coming first for `diet`. 
+
+```{r convert to factors}
+# Enter code to designate the supplement and diet columns of weights as factors and to order the levels of these factors as required. Save the result under the original name.
+
+
+# Use glimpse() to check that this worked
+
+
+# check the level order of each factor - does the 'reference' level come first?
+
+```
+
+What are the data types now of the supplement and diet columns?
+
+### Summarise the data
+
+We wish to calculate the mean and standard error of the mean for each of the twelve combinations of diet and supplement. 
+
+There isn't a function in base R with which we can calculate standard error of the mean directly, but we can do so knowing the standard deviation of the sample $\text{SD}$ (using `sd()`) and the sample size $n$ (using `n()`) using this formula:
+
+$$ \text{SE}=\frac{SD}{\sqrt{n}}$$
+
+```{r make data summary table one}
+# Use the group_by() and summarise() functions from dplyr (the package within tidyverse for data manipulation) to calculate the mean and standard error of the mean for each combination of diet and supplement
+#  Save the result to an object called growth_summary
+
+
+# type the name growth_summary so that it is displayed here
+
+```
+
+### Plot the data
+
+The next step, as so often before we launch into actual statistics, is to plot the data in a way that sheds light on the question we have. Here, we can use the use the means and standard errors of the mean that we have just calculated to produce a useful kind of line plot that in this context is often referred to as an interaction plot:
+
+```{r interaction plot one}
+# No need to add anything here! Just run the chunk
+growth_summary |>
+  ggplot(aes(x = supplement,y = mean_gain,colour = diet, group = diet)) +
+  geom_point(size = 2) +
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_gain-se_gain,
+                    ymax = mean_gain+se_gain), width=0.1) +
+  labs(x = "Supplement",
+       y = "Mean weight gain") +
+  scale_fill_brewer() +
+  theme_cowplot()
+
