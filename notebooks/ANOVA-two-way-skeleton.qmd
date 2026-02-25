@@ -1,0 +1,124 @@
+---
+title: "ANOVA two-way skeleton script"
+format: html
+editor: visual
+execute: 
+  message: false
+  warning: false
+---
+
+## Scenario
+We want to investigate the influence of feed and dietary supplement on the growth of cows. There are three feeds (barley, oats and wheat) and four supplements (control, suppersupp, supergain and agrimore). Thus we have two factors (feed and supplement). The feed factor has three levels and the supplement factor has four levels, so there are twelve combinations of the levels of the two factors.
+
+We carry out a study with four replicates (cows!) being fed each of the twelve possible combinations of feed and supplement.
+
+We want to know if feed affects growth, if supplement affects growth and if the effect of one depends on the level of the other (is there an interaction between feed and supplement)
+
+
+## Load packages
+```{r}
+library(tidyverse)
+library(here)
+library(janitor)
+library(cowplot)
+library(ggfortify)
+```
+
+## Load data
+```{r}
+filepath <- here("data", "growth.csv")
+weights <- read_csv(filepath)
+glimpse(weights)
+```
+
+This is a tidy data set. Do you need to tidy yours?
+
+## Refactor data
+Make sure that the columns containing the levels of the two factors are recognised by R as factor data types and that the levels are ranked in the order that makes sense to you. The default is alphabetical order but this may not be what you want.
+
+```{r}
+weights <- weights |>
+  mutate(supplement = factor(supplement, levels = c("control","agrimore", "supergain", "supersupp"))) |>
+  mutate(diet = factor(diet, levels = c("barley", "oats", "wheat")))
+
+# check that this worked
+glimpse(weights)
+
+# check the level order of each factor - does the 'reference' level come first?
+levels(weights$supplement)
+levels(weights$diet)
+```
+
+## Summarise the data
+Create a new summary data fame that tells us the replicate numbers for each combination of feed and supplement, the mean weight gain and the standard error of that
+```{r make data summary table one}
+# we use the group_by() and summarise() functions from dplyr (the package within tidyverse for data manipulation)
+growth_summary <- weights |>
+  group_by(diet, supplement) |>
+  summarise(n = n(), mean_gain = mean(gain), se_gain = sd(gain)/sqrt(n())) |>
+  ungroup()
+
+# if we type the name of an object, it gets printed out for us
+growth_summary
+```
+
+## Plot an interaction plot
+```{r interaction plot one}
+# No need to add anything here! Just run the chunk
+growth_summary |>
+  ggplot(aes(x = supplement,y = mean_gain,colour = diet, group = diet)) +
+  geom_point(size = 2) +
+  geom_line() +
+  geom_errorbar(aes(ymin = mean_gain-se_gain,
+                    ymax = mean_gain+se_gain), width=0.1) +
+  labs(x = "Supplement",
+       y = "Mean weight gain") +
+  scale_fill_brewer() +
+  theme_cowplot()
+```
+
+Is there evidence for a main effect of feed and/or supplement?
+Is there evidence of an interaction between them?
+
+## Create 2-way ANOVA model
+
+### First, try an interactive model
+```{r}
+model0 <- lm(gain ~ diet * supplement, data = weights)
+```
+
+```{r}
+autoplot(model0) + theme_cowplot()
+```
+
+Looks good?
+
+Now try an additive model
+
+```{r}
+model1 <- lm(gain ~ diet + supplement, data = weights)
+```
+
+Is the simpler additive model as as good as the interactive model at explaining the variability in the data?
+
+```{r}
+anova(model0, model1)
+```
+Yes! The null hypothesis of this test is that the ssimpler model is as powerful as the more complex interactive model. We get a high p-value so we not reject this null. 
+
+## Inspect the additive model
+
+First use `anova() again on the simpler model
+
+```{r}
+anova(model1)
+```
+
+There is evidence for a main effect of diet (p<0.001) and of supplement (p<0.001).
+
+## Effect Sizes
+```{r}
+summary(model1)
+```
+
+
